@@ -79,7 +79,9 @@ int main (int argc, char * argv[])
 	mq_open(mq_response, O_WRONLY);
 	//end mq
 	//test
-	printf("I am child with PID %d\n", (int)getpid());
+	MQ_FARMER_ORDER newOrder;
+	mq_receive(mq_orders, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
+	printf("I just received a message with x coordinate %d\n", newOrder.xCoord);
 
 
 	//end test

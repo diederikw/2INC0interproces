@@ -68,6 +68,10 @@ int main (int argc, char * argv[])
     	} else if (worker_pids[i] == 0){
     		execl("./worker","./worker",NULL);
     	} else {
+    		MQ_FARMER_ORDER sendOrder;
+    		sendOrder.xCoord = i;
+    		sendOrder.yCoord = i;
+    		mq_send(mq_orders, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
     		waitpid(-1,NULL,0);
     	}
     }

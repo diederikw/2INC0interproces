@@ -17,12 +17,14 @@ static char mq_orders[80];
 static char mq_response[80];
 
 typedef struct {
-
+	int xCoord; //Just for now! Need to come up with suitable parameters
+	int yCoord;
 } MQ_FARMER_ORDER;
 
 typedef struct {
 
 } MQ_WORKER_RESPONSE;
+
 
 #endif
 
