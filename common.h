@@ -16,6 +16,9 @@
 static char mq_orders[80];
 static char mq_response[80];
 
+mqd_t orderQueue;
+mqd_t responseQueue;
+
 typedef struct {
 	int xCoord; //Just for now! Need to come up with suitable parameters
 	int yCoord;

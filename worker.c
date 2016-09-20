@@ -80,7 +80,7 @@ int main (int argc, char * argv[])
 	//end mq
 	//test
 	MQ_FARMER_ORDER newOrder;
-	mq_receive(mq_orders, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
+	mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
 	printf("I just received a message with x coordinate %d\n", newOrder.xCoord);
 
 
