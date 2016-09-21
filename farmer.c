@@ -27,20 +27,25 @@
 #include "output.h"
 #include "common.h"
 
+
+
 void openMessageQueue(){
-	sprintf(mq_orders, "/order_queue_MFAVIER_%d", (int)getpid());
-	    	sprintf(mq_response, "/response_queue_MFAVIER_%d", (int)getpid());
-	    	struct mq_attr attr;
+			sprintf(mq_orders, "/order_queue_MFAVIER_%d", (int)getpid());
+			sprintf(mq_response, "/response_queue_MFAVIER_%d", (int)getpid());
+			struct mq_attr attr;
 	    	attr.mq_maxmsg = MQ_MAX_MESSAGES;
 	    	attr.mq_msgsize = sizeof(MQ_FARMER_ORDER);
 	    	orderQueue = mq_open(mq_orders, O_WRONLY | O_CREAT | O_EXCL, 0600, &attr);
 	    	if(orderQueue == -1){
 	    		perror("Opening the order queue failed");
+	    		exit(1);
 	    	}
+	    	attr.mq_maxmsg = MQ_MAX_MESSAGES;
 	    	attr.mq_msgsize = sizeof(MQ_WORKER_RESPONSE);
 	    	responseQueue = mq_open(mq_response, O_RDONLY | O_CREAT | O_EXCL, 0600, &attr);
 	    	if(responseQueue == -1){
 	    		perror("Opening the response queue failed");
+	    		exit(1);
 	    	}
 }
 
@@ -74,6 +79,7 @@ int main (int argc, char * argv[])
     	worker_pids[i] = fork();
     	if (worker_pids[i] < 0){
     		perror("An error occurred trying to create a new process");
+    		exit(1);
     	} else if (worker_pids[i] == 0){
     		execl("./worker","./worker",NULL);
     	} else {

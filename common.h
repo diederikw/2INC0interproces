@@ -25,7 +25,7 @@ typedef struct {
 } MQ_FARMER_ORDER;
 
 typedef struct {
-
+	int temp; //Also a temporary variable until we figure out what we want to send.
 } MQ_WORKER_RESPONSE;
 
 
