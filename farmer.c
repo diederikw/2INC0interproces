@@ -28,10 +28,9 @@
 #include "common.h"
 
 
-
 void openMessageQueue(){
-			sprintf(mq_orders, "/order_queue_MFAVIER_%d", (int)getpid());
-			sprintf(mq_response, "/response_queue_MFAVIER_%d", (int)getpid());
+			sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getpid());
+			sprintf(mq_response, "/response_queue_%s_%d", TEAM_NAME, (int)getpid());
 			struct mq_attr attr;
 	    	attr.mq_maxmsg = MQ_MAX_MESSAGES;
 	    	attr.mq_msgsize = sizeof(MQ_FARMER_ORDER);
@@ -86,6 +85,7 @@ int main (int argc, char * argv[])
     		MQ_FARMER_ORDER sendOrder;
     		sendOrder.xCoord = i;
     		sendOrder.yCoord = i;
+    		printf("Sending order now\n");
     		int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
     		if(justSent == -1){
     			perror("Sending an order failed");

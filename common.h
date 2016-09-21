@@ -13,6 +13,9 @@
 
 
 // TODO: put your definitions of the datastructures here
+#define TEAM_NAME "MFAVIER"
+
+
 static char mq_orders[80];
 static char mq_response[80];
 

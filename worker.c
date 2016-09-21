@@ -75,12 +75,20 @@ int main (int argc, char * argv[])
     //  * close the message queues
     
 	//Open message queue
-	mq_open(mq_orders, O_RDONLY);
-	mq_open(mq_response, O_WRONLY);
+	sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getppid());
+	sprintf(mq_response, "/response_queue_%s_%d", TEAM_NAME, (int)getppid());
+	orderQueue = mq_open(mq_orders, O_RDONLY);
+	responseQueue = mq_open(mq_response, O_WRONLY);
 	//end mq
 	//test
 	MQ_FARMER_ORDER newOrder;
-	mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
+	printf("I will now try to receive a message\n");
+	printf("The message queue descriptor is: %s\n", mq_orders);
+	int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
+	if(received == -1){
+		perror("An error occurred receiving a message\n");
+		exit(1);
+	}
 	printf("I just received a message with x coordinate %d\n", newOrder.xCoord);
 
 
