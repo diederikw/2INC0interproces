@@ -82,17 +82,19 @@ int main (int argc, char * argv[])
     	} else if (worker_pids[i] == 0){
     		execl("./worker","./worker",NULL);
     	} else {
-    		MQ_FARMER_ORDER sendOrder;
-    		sendOrder.xCoord = i;
-    		sendOrder.yCoord = i;
-    		printf("Sending order now\n");
-    		int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
-    		if(justSent == -1){
-    			perror("Sending an order failed");
-    		}
-    		waitpid(-1,NULL,0);
+
     	}
     }
+    //Farming
+    MQ_FARMER_ORDER sendOrder;
+    sendOrder.xCoord = i;
+    sendOrder.yCoord = i;
+    int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
+    if(justSent == -1){
+    	perror("Sending an order failed");
+   	}
+    waitpid(-1,NULL,0);
+    //End Farming
     //END_DIY
     output_end ();
     

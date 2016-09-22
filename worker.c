@@ -60,6 +60,12 @@ mandelbrot_point (double x, double y)
     return (k);
 }
 
+void mandelbrotToPixel(double mandelbrotX, double mandelbrotY, MQ_WORKER_RESPONSE *reply){
+	reply->xReturn = X_LOWERLEFT+((mandelbrotX-1)*STEP);
+	reply->yReturn = Y_LOWERLEFT+((mandelbrotY-1)*STEP);
+	return;
+}
+
 
 int main (int argc, char * argv[])
 {
@@ -80,20 +86,35 @@ int main (int argc, char * argv[])
 	orderQueue = mq_open(mq_orders, O_RDONLY);
 	responseQueue = mq_open(mq_response, O_WRONLY);
 	//end mq
-	//test
 	MQ_FARMER_ORDER newOrder;
-	printf("I will now try to receive a message\n");
-	printf("The message queue descriptor is: %s\n", mq_orders);
-	int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), NULL);
+	int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), (unsigned int *)NULL);
 	if(received == -1){
 		perror("An error occurred receiving a message\n");
 		exit(1);
 	}
-	printf("I just received a message with x coordinate %d\n", newOrder.xCoord);
-
-
-	//end test
-
+	rsleep(10000);
+	int returnColor = mandelbrot_point(newOrder.xCoord, newOrder.yCoord);
+	//Try to return to queue
+	struct mq_attr attr;
+	MQ_WORKER_RESPONSE reply;
+	mandelbrotToPixel(newOrder.xCoord, newOrder.yCoord, &reply);
+	reply.color = returnColor;
+	while(1){ //Try to send to response queue
+		int attrRet = mq_getattr(responseQueue, &attr); //There might be a preempt in between the check and the post, need to come up with something clever
+		if(attrRet == -1){
+			perror("mq_getattr failed");
+			exit(1);
+		}
+		if(attr.mq_msgsize < MQ_MAX_MESSAGES){
+			int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
+			if(justSent == -1){
+				perror("An error occurred responding"); //If this happens, we are screwed
+			}
+			break;
+		} else {
+			rsleep(10000); //This will be slow, need to come up with better solution
+		}
+	}
 	return (0);
 }
 

@@ -23,12 +23,14 @@ mqd_t orderQueue;
 mqd_t responseQueue;
 
 typedef struct {
-	int xCoord; //Just for now! Need to come up with suitable parameters
-	int yCoord;
+	double xCoord;
+	double yCoord;
 } MQ_FARMER_ORDER;
 
 typedef struct {
-	int temp; //Also a temporary variable until we figure out what we want to send.
+	int xReturn;
+	int yReturn;
+	int color;
 } MQ_WORKER_RESPONSE;
 
 
