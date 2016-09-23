@@ -60,12 +60,14 @@ mandelbrot_point (double x, double y)
     return (k);
 }
 
+//TODO: Delete. Ik wilde het nog niet verwijderen voordat de code 100% klaar is.
 int mandelbrotToPixel(double mandelbrotX){
 	return (mandelbrotX - X_LOWERLEFT)/STEP + 1;
 }
 
-double pixelToMandelbrot(int xPixel, double lowerLeft){
-	return (double)(lowerLeft+((xPixel)*STEP));
+//Convert a X- or Y- pixel-coordinate to a X- or Y- Mandelbrot coordinate
+double pixelToMandelbrot(int Pixel, double lowerLeft){
+	return (double)(lowerLeft+((Pixel)*STEP));
 }
 
 int main (int argc, char * argv[])
@@ -81,38 +83,42 @@ int main (int argc, char * argv[])
     //    until there are no more jobs to do
     //  * close the message queues
     
-	//Open message queue
+	//Open both message queues
 	sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getppid());
 	sprintf(mq_response, "/response_queue_%s_%d", TEAM_NAME, (int)getppid());
 	orderQueue = mq_open(mq_orders, O_RDONLY);
 	responseQueue = mq_open(mq_response, O_WRONLY);
 	//end mq
+
 	MQ_FARMER_ORDER newOrder;
 	MQ_WORKER_RESPONSE reply;
 	while(1){
+		//Check if an order has been received. If this failed, print an error and call the exit method.
 		int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), (unsigned int *)NULL);
 		if(received == -1){
 			perror("An error occurred receiving a message\n");
 			exit(1);
 		}
-		printf("I just received an order\n");
-		rsleep(10000);
-		//Try to return to queue
 
+		//Wait for a random time between 0 and 10.000 microseconds)
+		rsleep(10000);
+
+		//Copy the Y-pixel-coordinate to the reply. Initialize the x-pixel-coordinate variable.
 		reply.yReturn = newOrder.yCoord;
 		int xLoop;
+
+		//For all the pixels at pixel height yCoord, calculate the color using the mandelbrot_point() method.
 		for(xLoop = 0; xLoop < X_PIXEL; xLoop++){
 			reply.color[xLoop] = mandelbrot_point(pixelToMandelbrot(xLoop, X_LOWERLEFT), pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
-			//printf("%d ", reply.color[xLoop]);
-			//printf("%f ", (float)pixelToMandelbrot(xLoop));
 		}
-		//printf("Y:%f\n", (float)pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
+
+		//Send the colors for the whole horizontal line at pixel yCoord to the Response queue.
+		//If this failed, print an error and call the exit method.
 		int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
 		if(justSent == -1){
-			perror("An error occurred responding"); //If this happens, we are screwed
+			perror("An error occurred responding");
 			exit(1);
 		}
-		printf("I just responded to an order\n");
 	}
 }
 
