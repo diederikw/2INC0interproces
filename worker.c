@@ -65,7 +65,7 @@ int mandelbrotToPixel(double mandelbrotX){
 }
 
 double pixelToMandelbrot(int xPixel, double lowerLeft){
-	return (double)(lowerLeft+((xPixel-1)*STEP));
+	return (double)(lowerLeft+((xPixel)*STEP));
 }
 
 int main (int argc, char * argv[])
@@ -97,6 +97,7 @@ int main (int argc, char * argv[])
 	rsleep(10000);
 	//Try to return to queue
 	MQ_WORKER_RESPONSE reply;
+	reply.yReturn = newOrder.yCoord;
 	int xLoop;
 	for(xLoop = 0; xLoop < X_PIXEL; xLoop++){
 		reply.color[xLoop] = mandelbrot_point(pixelToMandelbrot(xLoop, X_LOWERLEFT), pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));

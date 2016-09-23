@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include <errno.h>    
 #include <unistd.h>         // for execlp
-#include <mqueue.h>         // for mq
+#include <mqueue.h>         // for mqr
 
 #include "settings.h"
 #include "output.h"
