@@ -29,6 +29,7 @@
 
 //GLOBAL VARIABLES
 int totalSent;
+int totalReceived;
 
 void openMessageQueue(){
 			sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getpid());
@@ -54,7 +55,9 @@ void printLine(MQ_WORKER_RESPONSE* response){
 	int i;
 	for(i = 0; i < X_PIXEL; i++){
 		output_draw_pixel(i, response->yReturn, response->color[i]);
+		//printf("%d ", response->color[i]);
 	}
+	//printf("\n");
 }
 
 void emptyResponseQueue(){
@@ -64,7 +67,7 @@ void emptyResponseQueue(){
 	 	perror("mq_getattr failed");
 	   	exit(1);
 	}
-	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && attr.mq_curmsgs > 0){
+	while(attr.mq_curmsgs > 0){
 		MQ_WORKER_RESPONSE justReceived;
 		int received = mq_receive(responseQueue, (char*)&justReceived, sizeof(MQ_WORKER_RESPONSE), (unsigned int *)NULL);
 		if(received == -1){
@@ -72,6 +75,8 @@ void emptyResponseQueue(){
 			exit(1);
 		}
 		printLine(&justReceived);
+		totalReceived++;
+		printf("I just printed to the window from response number %d\n", totalReceived);
 		int attrRet = mq_getattr(responseQueue, &attr);
 			if(attrRet == -1){
 			 	perror("mq_getattr failed");
@@ -100,6 +105,8 @@ int main (int argc, char * argv[])
     // student name and the process id (to ensure uniqueness during testing)
     
     //DIY
+    totalSent = 0;
+    totalReceived = 0;
     //MQ initialization
     	openMessageQueue();
     //END MQ
@@ -126,21 +133,22 @@ int main (int argc, char * argv[])
     	exit(1);
     }
     while(totalSent < Y_PIXEL){
-    	while(attr.mq_curmsgs < MQ_MAX_MESSAGES){
+    	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && totalSent < Y_PIXEL){
     		sendOrder.yCoord = totalSent;
     		int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
     		if(justSent == -1){
     			perror("Sending an order failed");
     			exit(1);
     		}
+    		printf("I just sent an order number %d\n", totalSent);
     		totalSent++;
     		int attrRet = mq_getattr(orderQueue, &attr);
     		if(attrRet == -1){
     			perror("mq_getattr failed");
     			exit(1);
     		}
-    		emptyResponseQueue();
     	}
+    	emptyResponseQueue();
     }
     //End Farming
     //END_DIY

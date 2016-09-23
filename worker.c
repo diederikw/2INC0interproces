@@ -64,8 +64,8 @@ int mandelbrotToPixel(double mandelbrotX){
 	return (mandelbrotX - X_LOWERLEFT)/STEP + 1;
 }
 
-double pixelToMandelbrot(int xPixel){
-	return X_LOWERLEFT+((xPixel-1)*STEP);
+double pixelToMandelbrot(int xPixel, double lowerLeft){
+	return (double)(lowerLeft+((xPixel-1)*STEP));
 }
 
 int main (int argc, char * argv[])
@@ -93,17 +93,22 @@ int main (int argc, char * argv[])
 		perror("An error occurred receiving a message\n");
 		exit(1);
 	}
+	printf("I just received an order\n");
 	rsleep(10000);
 	//Try to return to queue
 	MQ_WORKER_RESPONSE reply;
 	int xLoop;
-	for(xLoop = X_LOWERLEFT; xLoop < X_LOWERLEFT+((X_PIXEL-1)*STEP); xLoop += STEP){
-		reply.color[mandelbrotToPixel(xLoop)] = mandelbrot_point(xLoop, pixelToMandelbrot(newOrder.yCoord));
+	for(xLoop = 0; xLoop < X_PIXEL; xLoop++){
+		reply.color[xLoop] = mandelbrot_point(pixelToMandelbrot(xLoop, X_LOWERLEFT), pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
+		//printf("%d ", reply.color[xLoop]);
+		//printf("%f ", (float)pixelToMandelbrot(xLoop));
 	}
+	printf("Y:%f\n", (float)pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
 	int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
 	if(justSent == -1){
 		perror("An error occurred responding"); //If this happens, we are screwed
 	}
+	printf("I just responded to an order\n");
 	return (0);
 }
 
