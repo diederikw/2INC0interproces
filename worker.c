@@ -60,12 +60,13 @@ mandelbrot_point (double x, double y)
     return (k);
 }
 
-void mandelbrotToPixel(double mandelbrotX, double mandelbrotY, MQ_WORKER_RESPONSE *reply){
-	reply->xReturn = X_LOWERLEFT+((mandelbrotX-1)*STEP);
-	reply->yReturn = Y_LOWERLEFT+((mandelbrotY-1)*STEP);
-	return;
+int mandelbrotToPixel(double mandelbrotX){
+	return (mandelbrotX - X_LOWERLEFT)/STEP + 1;
 }
 
+double pixelToMandelbrot(int xPixel){
+	return X_LOWERLEFT+((xPixel-1)*STEP);
+}
 
 int main (int argc, char * argv[])
 {
@@ -93,27 +94,15 @@ int main (int argc, char * argv[])
 		exit(1);
 	}
 	rsleep(10000);
-	int returnColor = mandelbrot_point(newOrder.xCoord, newOrder.yCoord);
 	//Try to return to queue
-	struct mq_attr attr;
 	MQ_WORKER_RESPONSE reply;
-	mandelbrotToPixel(newOrder.xCoord, newOrder.yCoord, &reply);
-	reply.color = returnColor;
-	while(1){ //Try to send to response queue
-		int attrRet = mq_getattr(responseQueue, &attr); //There might be a preempt in between the check and the post, need to come up with something clever
-		if(attrRet == -1){
-			perror("mq_getattr failed");
-			exit(1);
-		}
-		if(attr.mq_msgsize < MQ_MAX_MESSAGES){
-			int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
-			if(justSent == -1){
-				perror("An error occurred responding"); //If this happens, we are screwed
-			}
-			break;
-		} else {
-			rsleep(10000); //This will be slow, need to come up with better solution
-		}
+	int xLoop;
+	for(xLoop = X_LOWERLEFT; xLoop < X_LOWERLEFT+((X_PIXEL-1)*STEP); xLoop += STEP){
+		reply.color[mandelbrotToPixel(xLoop)] = mandelbrot_point(xLoop, pixelToMandelbrot(newOrder.yCoord));
+	}
+	int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
+	if(justSent == -1){
+		perror("An error occurred responding"); //If this happens, we are screwed
 	}
 	return (0);
 }

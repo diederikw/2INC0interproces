@@ -27,6 +27,8 @@
 #include "output.h"
 #include "common.h"
 
+//GLOBAL VARIABLES
+int totalSent;
 
 void openMessageQueue(){
 			sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getpid());
@@ -48,6 +50,35 @@ void openMessageQueue(){
 	    	}
 }
 
+void printLine(int yCoord, int colorArray[X_PIXEL]){
+	int i;
+	for(i = 0; i < X_PIXEL; i++){
+		output_draw_pixel(i, yCoord, colorArray[i]);
+	}
+}
+
+void emptyResponseQueue(){
+	struct mq_attr attr;
+	int attrRet = mq_getattr(responseQueue, &attr);
+	if(attrRet == -1){
+	 	perror("mq_getattr failed");
+	   	exit(1);
+	}
+	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && attr.mq_curmsgs > 0){
+		MQ_WORKER_RESPONSE justReceived;
+		int received = mq_receive(responseQueue, (char*)&justReceived, sizeof(MQ_WORKER_RESPONSE), (unsigned int *)NULL);
+		if(received == -1){
+			perror("An error occurred receiving a message\n");
+			exit(1);
+		}
+		printLine(justReceived.yReturn, justReceived.color);
+		int attrRet = mq_getattr(responseQueue, &attr);
+			if(attrRet == -1){
+			 	perror("mq_getattr failed");
+			   	exit(1);
+			}
+	}
+}
 
 int main (int argc, char * argv[])
 {
@@ -86,17 +117,39 @@ int main (int argc, char * argv[])
     	}
     }
     //Farming
-    MQ_FARMER_ORDER sendOrder;
-    sendOrder.xCoord = i;
-    sendOrder.yCoord = i;
-    int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
-    if(justSent == -1){
-    	perror("Sending an order failed");
-   	}
-    waitpid(-1,NULL,0);
+   	MQ_FARMER_ORDER sendOrder;
+
+    struct mq_attr attr;
+    int attrRet = mq_getattr(orderQueue, &attr);
+    if(attrRet == -1){
+    	perror("mq_getattr failed");
+    	exit(1);
+    }
+    while(totalSent < Y_PIXEL){
+    	while(attr.mq_curmsgs < MQ_MAX_MESSAGES){
+    		sendOrder.yCoord = totalSent;
+    		int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
+    		if(justSent == -1){
+    			perror("Sending an order failed");
+    			exit(1);
+    		}
+    		totalSent++;
+    		int attrRet = mq_getattr(orderQueue, &attr);
+    		if(attrRet == -1){
+    			perror("mq_getattr failed");
+    			exit(1);
+    		}
+    		emptyResponseQueue();
+    	}
+    }
     //End Farming
     //END_DIY
     output_end ();
     
     return (0);
 }
+
+/*
+ * int yLoop;
+    	for(yLoop = Y_LOWERLEFT; yLoop < Y_LOWERLEFT+((Y_PIXEL-1)*STEP); yLoop += STEP){
+ */

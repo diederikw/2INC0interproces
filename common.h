@@ -23,14 +23,12 @@ mqd_t orderQueue;
 mqd_t responseQueue;
 
 typedef struct {
-	double xCoord;
-	double yCoord;
+	int yCoord;
 } MQ_FARMER_ORDER;
 
 typedef struct {
-	int xReturn;
 	int yReturn;
-	int color;
+	int color[X_PIXEL];
 } MQ_WORKER_RESPONSE;
 
 
