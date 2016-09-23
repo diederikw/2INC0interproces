@@ -50,10 +50,10 @@ void openMessageQueue(){
 	    	}
 }
 
-void printLine(int yCoord, int colorArray[X_PIXEL]){
+void printLine(MQ_WORKER_RESPONSE* response){
 	int i;
 	for(i = 0; i < X_PIXEL; i++){
-		output_draw_pixel(i, yCoord, colorArray[i]);
+		output_draw_pixel(i, response->yReturn, response->color[i]);
 	}
 }
 
@@ -71,7 +71,7 @@ void emptyResponseQueue(){
 			perror("An error occurred receiving a message\n");
 			exit(1);
 		}
-		printLine(justReceived.yReturn, justReceived.color);
+		printLine(&justReceived);
 		int attrRet = mq_getattr(responseQueue, &attr);
 			if(attrRet == -1){
 			 	perror("mq_getattr failed");
