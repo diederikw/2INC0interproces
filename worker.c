@@ -2,8 +2,8 @@
  * Operating Systems   (2INCO)   Practical Assignment
  * Interprocess Communication
  *
- * STUDENT_NAME_1 (STUDENT_NR_1)
- * STUDENT_NAME_2 (STUDENT_NR_2)
+ * Diederik de Wit (0829667)
+ * Michiel Favier (0951737)
  *
  * Grading:
  * Students who hand in clean code that fully satisfies the minimum requirements will get an 8. 

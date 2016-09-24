@@ -2,8 +2,8 @@
  * Operating Systems   (2INCO)   Practical Assignment
  * Interprocess Communication
  *
- * STUDENT_NAME_1 (STUDENT_NR_1)
- * STUDENT_NAME_2 (STUDENT_NR_2)
+ * Diederik de Wit (0829667)
+ * Michiel Favier (0951737)
  *
  * Grading:
  * Students who hand in clean code that fully satisfies the minimum requirements will get an 8. 
@@ -65,14 +65,14 @@ void emptyResponseQueue(){
 	struct mq_attr attr;
 	int attrRet = mq_getattr(responseQueue, &attr);
 	if(attrRet == -1){
-	 	perror("mq_getattr failed");
-	   	exit(1);
+		perror("mq_getattr failed");
+		exit(1);
 	}
 	if(attr.mq_curmsgs == 0){
 		return;
 	}
 	printf("Starting to empty queue: %d\n", (int)attr.mq_curmsgs);
-	while(attr.mq_curmsgs > 0){
+	while(attr.mq_curmsgs > 0 && totalReceived < Y_PIXEL){
 		MQ_WORKER_RESPONSE justReceived;
 		int received = mq_receive(responseQueue, (char*)&justReceived, sizeof(MQ_WORKER_RESPONSE), (unsigned int *)NULL);
 		if(received == -1){
@@ -83,12 +83,12 @@ void emptyResponseQueue(){
 		totalReceived++;
 		numberMessagesEmptied++;
 		printf("I just printed to the window from response number %d\n", totalReceived);
-		int attrRet = mq_getattr(responseQueue, &attr);
+		attrRet = mq_getattr(responseQueue, &attr);
 		if(attrRet == -1){
 		 	perror("mq_getattr failed");
 		   	exit(1);
 		}
-		printf("Emptying queue : %d", (int)attr.mq_curmsgs);
+		printf("Emptying queue : %d\n", (int)attr.mq_curmsgs);
 	}
 	return;
 }
@@ -135,7 +135,7 @@ int main (int argc, char * argv[])
    	MQ_FARMER_ORDER sendOrder;
    	int numberOfSwitches = -1;
     struct mq_attr attr;
-    while(totalSent < Y_PIXEL  && totalReceived < Y_PIXEL){
+    while(totalSent < Y_PIXEL){
     	int attrRet = mq_getattr(orderQueue, &attr);
     	    if(attrRet == -1){
     	    	perror("mq_getattr failed");
@@ -159,7 +159,9 @@ int main (int argc, char * argv[])
     		}
     	}
     	emptyResponseQueue();
-
+    }
+    while(totalReceived < Y_PIXEL){
+    	emptyResponseQueue();
     }
     //End Farming
     //END_DIY
