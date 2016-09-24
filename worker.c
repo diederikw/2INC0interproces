@@ -60,11 +60,6 @@ mandelbrot_point (double x, double y)
     return (k);
 }
 
-//TODO: Delete. Ik wilde het nog niet verwijderen voordat de code 100% klaar is.
-int mandelbrotToPixel(double mandelbrotX){
-	return (mandelbrotX - X_LOWERLEFT)/STEP + 1;
-}
-
 //Convert a X- or Y- pixel-coordinate to a X- or Y- Mandelbrot coordinate
 double pixelToMandelbrot(int Pixel, double lowerLeft){
 	return (double)(lowerLeft+((Pixel)*STEP));
@@ -72,8 +67,6 @@ double pixelToMandelbrot(int Pixel, double lowerLeft){
 
 int main (int argc, char * argv[])
 {
-    // TODO:
-    // (see message_queue_test() in interprocess_basic.c)
     //  * open the two message queues (whose names are provided in the arguments)
     //  * repeatingly:
     //      - read from a message queue the new job to do
@@ -97,6 +90,11 @@ int main (int argc, char * argv[])
 		int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), (unsigned int *)NULL);
 		if(received == -1){
 			perror("An error occurred receiving a message\n");
+			exit(1);
+		}
+		if(newOrder.yCoord == -1){
+			mq_close(orderQueue);
+			mq_close(responseQueue);
 			exit(1);
 		}
 

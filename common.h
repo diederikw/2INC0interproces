@@ -13,7 +13,7 @@
 
 
 // TODO: put your definitions of the datastructures here
-#define TEAM_NAME "MFAVIER"
+#define TEAM_NAME "MFAVIER_DDEWIT"
 
 
 static char mq_orders[80];

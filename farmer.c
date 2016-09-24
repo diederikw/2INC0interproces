@@ -49,9 +49,6 @@ void openMessageQueue(){
 	    exit(1);
 	}
 
-	//TODO: Volgens mij hoeven we onderstaande regel niet nog een keer te doen.
-	attr.mq_maxmsg = MQ_MAX_MESSAGES;
-
 	//Save the desired attributes for the Response message queue in "attr".
 	attr.mq_msgsize = sizeof(MQ_WORKER_RESPONSE);
 
@@ -74,9 +71,6 @@ void printLine(MQ_WORKER_RESPONSE* response){
 
 //Empty the Response queue
 void emptyResponseQueue(){
-	//The number of message which have been deleted in a single call of this method is reset to 0.
-	//TODO: Volgens mij gebruiken we deze variabele niet meer. NB: hij staat ook een stukje hieronder.
-	int numberMessagesEmptied = 0;
 
 	struct mq_attr attr;
 	int attrRet = mq_getattr(responseQueue, &attr);
@@ -108,15 +102,12 @@ void emptyResponseQueue(){
 
 		//Count the total amount of messages received and the amount of messages received during a single call of this method.
 		totalReceived++;
-		numberMessagesEmptied++;
 
-		//TODO: Volgens mij kan dit weg (t/m *)
 		attrRet = mq_getattr(responseQueue, &attr);
 		if(attrRet == -1){
 		 	perror("mq_getattr failed");
 		   	exit(1);
 		}
-		//TODO: *
 	}
 	return;
 }
@@ -130,7 +121,6 @@ int main (int argc, char * argv[])
         
     output_init();
 
-    // TODO:
     //  * create the message queues (see message_queue_test() in interprocess_basic.c)
     //  * create the child processes (see process_test() and message_queue_test())
     //  * do the farming (use output_draw_pixel() for the coloring)
@@ -140,7 +130,6 @@ int main (int argc, char * argv[])
     // Important notice: make sure that the names of the message queues contain your
     // student name and the process id (to ensure uniqueness during testing)
     
-    //DIY
 
     //Set the counter for the total amount of messages received and sent to 0.
     totalSent = 0;
@@ -156,23 +145,17 @@ int main (int argc, char * argv[])
     for(i = 0; i < NROF_WORKERS; i++){
     	worker_pids[i] = fork();
 
-    	//Print an error if there was an error while creating a new process.
-    	//TODO: Ik weer niet waarom/wat er gebeurt in de else if statement.
+    	//Execute a worker in every fork
     	if (worker_pids[i] < 0){
     		perror("An error occurred trying to create a new process");
     		exit(1);
     	} else if (worker_pids[i] == 0){
     		execl("./worker","./worker",NULL);
-    	} else {
-    		//TODO: Dit is leeg. Kan het dan niet weg?
     	}
     }
 
     //Farming
    	MQ_FARMER_ORDER sendOrder;
-
-   	//Initialize the counter for the amount of times switched between sending and receiving.
-   	int numberOfSwitches = -1;
 
     struct mq_attr attr;
 
@@ -186,11 +169,7 @@ int main (int argc, char * argv[])
     	   	exit(1);
     	}
 
-    	//Count the times switched between sending and receiving.
-    	numberOfSwitches++;
-
     	//While the Order queue has not reached its limit and the total amount of messages sent is less than the total amount of jobs, send another order.
-    	//TODO: totalSent < Y_Pixel is overbodig hier. ALs je dit verwijderd, vergeet dan niet het comment hierboven aan te passen.
     	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && totalSent < Y_PIXEL){
     		//Initialize the Y-value for the order.
     		sendOrder.yCoord = totalSent;
@@ -207,7 +186,6 @@ int main (int argc, char * argv[])
     		totalSent++;
     		//Get the attributes of the Order queue.
     		//If this failed, print an error and call the exit method.
-    		//TODO: Ik kan zo even niet zien waarom we dit hier nog doen.
     		int attrRet = mq_getattr(orderQueue, &attr);
     		if(attrRet == -1){
     			perror("mq_getattr failed");
@@ -223,9 +201,31 @@ int main (int argc, char * argv[])
     while(totalReceived < Y_PIXEL){
     	emptyResponseQueue();
     }
+    //stop all children and close message queues
+    for(i = 0; i < NROF_WORKERS; i++){
+    	sendOrder.yCoord = -1;
+    	int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
+    	if(justSent == -1){
+    		perror("Sending an order failed");
+    		exit(1);
+    	}
+    }
+
+    for(i = 0; i < NROF_WORKERS; i++){
+    	waitpid(worker_pids[i], NULL, -1);
+    }
+    mq_close(orderQueue);
+    mq_close(responseQueue);
+    int unlinking = mq_unlink(mq_orders);
+    if(unlinking == -1){
+    	perror("Unlinking the order queue failed");
+    }
+    unlinking = mq_unlink(mq_response);
+    if(unlinking == -1){
+    	perror("Unlinking the response queue failed");
+    }
 
     //End Farming
-    //END_DIY
     output_end ();
     
     return (0);
