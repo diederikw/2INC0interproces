@@ -75,7 +75,7 @@ void printLine(MQ_WORKER_RESPONSE* response){
 //Empty the Response queue
 void emptyResponseQueue(){
 	//The number of message which have been deleted in a single call of this method is reset to 0.
-	//TODO: Volgens mij gebruiken we deze variabele niet meer. NB: hij staart ook een stukje hieronder.
+	//TODO: Volgens mij gebruiken we deze variabele niet meer. NB: hij staat ook een stukje hieronder.
 	int numberMessagesEmptied = 0;
 
 	struct mq_attr attr;
@@ -86,7 +86,7 @@ void emptyResponseQueue(){
 		exit(1);
 	}
 
-	//If there are currently no messages left in the Response queue, return.
+	//If there are currently no messages in the Response queue, return.
 	if(attr.mq_curmsgs == 0){
 		return;
 	}
@@ -105,6 +105,7 @@ void emptyResponseQueue(){
 
 		//The print method is called with the message which has just been retrieved from the Response queue.
 		printLine(&justReceived);
+
 		//Count the total amount of messages received and the amount of messages received during a single call of this method.
 		totalReceived++;
 		numberMessagesEmptied++;
@@ -189,6 +190,7 @@ int main (int argc, char * argv[])
     	numberOfSwitches++;
 
     	//While the Order queue has not reached its limit and the total amount of messages sent is less than the total amount of jobs, send another order.
+    	//TODO: totalSent < Y_Pixel is overbodig hier. ALs je dit verwijderd, vergeet dan niet het comment hierboven aan te passen.
     	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && totalSent < Y_PIXEL){
     		//Initialize the Y-value for the order.
     		sendOrder.yCoord = totalSent;
