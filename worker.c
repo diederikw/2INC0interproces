@@ -88,29 +88,32 @@ int main (int argc, char * argv[])
 	responseQueue = mq_open(mq_response, O_WRONLY);
 	//end mq
 	MQ_FARMER_ORDER newOrder;
-	int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), (unsigned int *)NULL);
-	if(received == -1){
-		perror("An error occurred receiving a message\n");
-		exit(1);
-	}
-	printf("I just received an order\n");
-	rsleep(10000);
-	//Try to return to queue
 	MQ_WORKER_RESPONSE reply;
-	reply.yReturn = newOrder.yCoord;
-	int xLoop;
-	for(xLoop = 0; xLoop < X_PIXEL; xLoop++){
-		reply.color[xLoop] = mandelbrot_point(pixelToMandelbrot(xLoop, X_LOWERLEFT), pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
-		//printf("%d ", reply.color[xLoop]);
-		//printf("%f ", (float)pixelToMandelbrot(xLoop));
+	while(1){
+		int received = mq_receive(orderQueue, (char*)&newOrder, sizeof(MQ_FARMER_ORDER), (unsigned int *)NULL);
+		if(received == -1){
+			perror("An error occurred receiving a message\n");
+			exit(1);
+		}
+		printf("I just received an order\n");
+		rsleep(10000);
+		//Try to return to queue
+
+		reply.yReturn = newOrder.yCoord;
+		int xLoop;
+		for(xLoop = 0; xLoop < X_PIXEL; xLoop++){
+			reply.color[xLoop] = mandelbrot_point(pixelToMandelbrot(xLoop, X_LOWERLEFT), pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
+			//printf("%d ", reply.color[xLoop]);
+			//printf("%f ", (float)pixelToMandelbrot(xLoop));
+		}
+		//printf("Y:%f\n", (float)pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
+		int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
+		if(justSent == -1){
+			perror("An error occurred responding"); //If this happens, we are screwed
+			exit(1);
+		}
+		printf("I just responded to an order\n");
 	}
-	printf("Y:%f\n", (float)pixelToMandelbrot(newOrder.yCoord, Y_LOWERLEFT));
-	int justSent = mq_send(responseQueue, (char*)&reply, sizeof(MQ_WORKER_RESPONSE), (unsigned int)NULL);
-	if(justSent == -1){
-		perror("An error occurred responding"); //If this happens, we are screwed
-	}
-	printf("I just responded to an order\n");
-	return (0);
 }
 
 /*

@@ -28,8 +28,8 @@
 #include "common.h"
 
 //GLOBAL VARIABLES
-int totalSent;
-int totalReceived;
+int totalSent = 0;
+int totalReceived = 0;
 
 void openMessageQueue(){
 			sprintf(mq_orders, "/order_queue_%s_%d", TEAM_NAME, (int)getpid());
@@ -61,12 +61,17 @@ void printLine(MQ_WORKER_RESPONSE* response){
 }
 
 void emptyResponseQueue(){
+	int numberMessagesEmptied = 0;
 	struct mq_attr attr;
 	int attrRet = mq_getattr(responseQueue, &attr);
 	if(attrRet == -1){
 	 	perror("mq_getattr failed");
 	   	exit(1);
 	}
+	if(attr.mq_curmsgs == 0){
+		return;
+	}
+	printf("Starting to empty queue: %d\n", (int)attr.mq_curmsgs);
 	while(attr.mq_curmsgs > 0){
 		MQ_WORKER_RESPONSE justReceived;
 		int received = mq_receive(responseQueue, (char*)&justReceived, sizeof(MQ_WORKER_RESPONSE), (unsigned int *)NULL);
@@ -76,13 +81,16 @@ void emptyResponseQueue(){
 		}
 		printLine(&justReceived);
 		totalReceived++;
+		numberMessagesEmptied++;
 		printf("I just printed to the window from response number %d\n", totalReceived);
 		int attrRet = mq_getattr(responseQueue, &attr);
-			if(attrRet == -1){
-			 	perror("mq_getattr failed");
-			   	exit(1);
-			}
+		if(attrRet == -1){
+		 	perror("mq_getattr failed");
+		   	exit(1);
+		}
+		printf("Emptying queue : %d", (int)attr.mq_curmsgs);
 	}
+	return;
 }
 
 int main (int argc, char * argv[])
@@ -125,14 +133,16 @@ int main (int argc, char * argv[])
     }
     //Farming
    	MQ_FARMER_ORDER sendOrder;
-
+   	int numberOfSwitches = -1;
     struct mq_attr attr;
-    int attrRet = mq_getattr(orderQueue, &attr);
-    if(attrRet == -1){
-    	perror("mq_getattr failed");
-    	exit(1);
-    }
-    while(totalSent < Y_PIXEL){
+    while(totalSent < Y_PIXEL  && totalReceived < Y_PIXEL){
+    	int attrRet = mq_getattr(orderQueue, &attr);
+    	    if(attrRet == -1){
+    	    	perror("mq_getattr failed");
+    	    	exit(1);
+    	    }
+    	numberOfSwitches++;
+    	//printf("Switched %d times between sending and receiving\n", numberOfSwitches);
     	while(attr.mq_curmsgs < MQ_MAX_MESSAGES && totalSent < Y_PIXEL){
     		sendOrder.yCoord = totalSent;
     		int justSent = mq_send(orderQueue, (char*)&sendOrder, sizeof(MQ_FARMER_ORDER), 0);
@@ -140,8 +150,8 @@ int main (int argc, char * argv[])
     			perror("Sending an order failed");
     			exit(1);
     		}
-    		printf("I just sent an order number %d\n", totalSent);
     		totalSent++;
+    		printf("I just sent an order number %d\n", totalSent);
     		int attrRet = mq_getattr(orderQueue, &attr);
     		if(attrRet == -1){
     			perror("mq_getattr failed");
@@ -149,6 +159,7 @@ int main (int argc, char * argv[])
     		}
     	}
     	emptyResponseQueue();
+
     }
     //End Farming
     //END_DIY
@@ -156,8 +167,3 @@ int main (int argc, char * argv[])
     
     return (0);
 }
-
-/*
- * int yLoop;
-    	for(yLoop = Y_LOWERLEFT; yLoop < Y_LOWERLEFT+((Y_PIXEL-1)*STEP); yLoop += STEP){
- */
